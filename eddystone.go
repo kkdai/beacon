@@ -20,9 +20,8 @@ const (
 )
 
 type EddyStoneBeacon struct {
-	URLFrame *eddystone.Frame
-	UIDFrame *eddystone.Frame
-	TLMFrame *eddystone.Frame
+	//Output frame data for eddystone beacon
+	OutFrame *eddystone.Frame
 
 	//Tx power is the received power at 0 meters, in dBm, and the value ranges from -100 dBm to +20 dBm to a resolution of 1 dBm.
 	//
@@ -32,25 +31,73 @@ type EddyStoneBeacon struct {
 	PowerLevel int
 }
 
-func NewEddystoneBeacon(pl int) *EddyStoneBeacon {
+//Create a Eddystone beacon with URL frame (physical web)
+// url:  It need include with "http://" or "https://"
+// PowerLevel:  The power level adjustment, refer PowerLevel description
+// Ex: NewEddystoneURLBeacon("http://google.com", -20)
+func NewEddystoneURLBeacon(url string, powerLevel int) *EddyStoneBeacon {
 	eb := new(EddyStoneBeacon)
-	eb.PowerLevel = pl
+	eb.PowerLevel = powerLevel
+	eb.addURL(url)
 	return eb
 }
 
-func (eb *EddyStoneBeacon) AddURL(url string) {
+//Create a Eddystone beacon with UID frame (10 bytes for namesapce, 6 bytes for instance)
+// Namespace:  10 bytes for UID namespace
+// Instance:   6  bytes for instance
+// PowerLevel:  The power level adjustment, refer PowerLevel description
+// Ex: NewEddystoneUIDBeacon("00010203040506070809", "aabbccddeeff", -20)
+func NewEddystoneUIDBeacon(namespace, instance string, powerLevel int) *EddyStoneBeacon {
+	eb := new(EddyStoneBeacon)
+	eb.PowerLevel = powerLevel
+	eb.addUID(namespace, instance)
+	return eb
+}
+
+//Create a Eddystone beacon with TLM frame (for tansfer telemetry)
+// BATT: The battery voltage
+// TEMP: Beacon temperature is the temperature in degrees Celsius
+// AdvCnt: Count of advertisement frames of all types emitted by the beacon since power-up or reboot
+// SecCnt: Counter that represents time since beacon power-up or reboot.
+// PowerLevel:  The power level adjustment, refer PowerLevel description
+// Ex: NewEddystoneUIDBeacon(500, 22.0, 100, 1000, -20)
+func NewEddystoneTLMBeacon(batt uint16, temp float32, advCnt, secCnt uint32, powerLevel int) *EddyStoneBeacon {
+	eb := new(EddyStoneBeacon)
+	eb.PowerLevel = powerLevel
+	eb.addTLM(batt, temp, advCnt, secCnt)
+	return eb
+}
+
+func (eb *EddyStoneBeacon) addTLM(batt uint16, temp float32, advCnt, secCnt uint32) {
+	f, err := eddystone.MakeTLMFrame(batt, temp, advCnt, secCnt)
+	if err != nil {
+		panic(err)
+	}
+	eb.OutFrame = &f
+}
+
+func (eb *EddyStoneBeacon) addUID(ns, inst string) {
+	f, err := eddystone.MakeUIDFrame(ns, inst, eb.PowerLevel)
+	if err != nil {
+		panic(err)
+	}
+	eb.OutFrame = &f
+}
+
+func (eb *EddyStoneBeacon) addURL(url string) {
 	f, err := eddystone.MakeURLFrame(url, eb.PowerLevel)
 	if err != nil {
 		panic(err)
 	}
-	eb.URLFrame = &f
+	eb.OutFrame = &f
 }
 
+// Start to Advertise your beacon, it is block API.
 func (eb *EddyStoneBeacon) Advertise() {
 	a := &gatt.AdvPacket{}
 	a.AppendFlags(advFlagGeneralDiscoverable | advFlagLEOnly)
 	a.AppendField(advTypeAllUUID16, eddystone.SvcUUIDBytes)
-	a.AppendField(advTypeServiceData16, append(eddystone.SvcUUIDBytes, *eb.URLFrame...))
+	a.AppendField(advTypeServiceData16, append(eddystone.SvcUUIDBytes, *eb.OutFrame...))
 
 	fmt.Println(a.Len(), a)
 
