@@ -5,7 +5,6 @@ import (
 )
 
 func main() {
-	ed := NewEddystoneBeacon(-20)
-	ed.AddURL("http://www.evanlin.com")
+	ed := NewEddystoneURLBeacon("http://www.evanlin.com", -20)
 	ed.Advertise()
 }
