@@ -1,6 +1,8 @@
 Beacon Simulator: A simple beacon simulator (iBeacon/Eddystone) in Golang
 ==================
 
+[![Join the chat at https://gitter.im/kkdai/beacon](https://badges.gitter.im/kkdai/beacon.svg)](https://gitter.im/kkdai/beacon?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/kkdai/beacon/master/LICENSE)  [![GoDoc](https://godoc.org/github.com/kkdai/beacon?status.svg)](https://godoc.org/github.com/kkdai/beacon)  [![Build Status](https://travis-ci.org/kkdai/beacon.svg?branch=master)](https://travis-ci.org/kkdai/beacon)
 
 
