@@ -18,6 +18,12 @@ Install
 `go get github.com/kkdai/beacon`
 
 
+Binary
+---------------
+
+- Eddystone: `go install github.com/kkdai/beacon/eddystone`
+- iBeacon: `go install github.com/kkdai/beacon/ibeacon`
+
 Simulator iBeacon
 ---------------
 
@@ -59,7 +65,7 @@ func main() {
 Inspired by
 ---------------
 
-- [https://github.com/paypal/gatt](https://github.com/paypal/gatt)
+- [github.com/go-ble/ble](github.com/go-ble/ble)
 - [https://github.com/suapapa/go_eddystone](https://github.com/suapapa/go_eddystone)
 
 Project52
