@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/go-ble/ble"
+	"github.com/go-ble/ble/examples/lib"
 	"github.com/go-ble/ble/examples/lib/dev"
 )
 
 type IBeacon struct {
-	// serviceList []*ble.Service
-	// beaconDev   *ble.Device
+	serviceList []*ble.Service
+	BeaconDev   ble.Device
 
 	//Device Information
 	DevUUID         string
@@ -23,12 +24,19 @@ type IBeacon struct {
 }
 
 func NewIBeacon(devUUID string, name string, powerLevel int8) *IBeacon {
-	// ib := new(IBeacon)
-	// ib.DevUUID = devUUID
-	// ib.DevName = name
-	// ib.DevMajorVersion = 1 //default
-	// ib.DevMinorVersion = 1 //default
-	// ib.PowerLevel = powerLevel
+	d, err := dev.NewDevice("default")
+	if err != nil {
+		log.Fatalf("can't new device : %s", err)
+	}
+
+	return &IBeacon{
+		BeaconDev:       d,
+		DevUUID:         devUUID,
+		DevName:         name,
+		DevMajorVersion: 1,
+		DevMinorVersion: 1,
+		PowerLevel:      powerLevel,
+	}
 	return &IBeacon{}
 }
 
@@ -38,27 +46,29 @@ func (ib *IBeacon) SetiBeaconVersion(major, minor uint16) {
 }
 
 func (ib *IBeacon) AddBatteryService() {
-	// sev := ble.NewService(ble.BatteryUUID)
-	// ib.serviceList = append(ib.serviceList, sev)
+	sev := ble.NewService(ble.BatteryUUID)
+	ib.serviceList = append(ib.serviceList, sev)
 }
 
 func (ib *IBeacon) AddCountService() {
-	// testSvc := ble.NewService(lib.TestSvcUUID)
-	// testSvc.AddCharacteristic(lib.NewCountChar())
-	// testSvc.AddCharacteristic(lib.NewEchoChar())
-	// ib.serviceList = append(ib.serviceList, testSvc)
+	testSvc := ble.NewService(lib.TestSvcUUID)
+	testSvc.AddCharacteristic(lib.NewCountChar())
+	testSvc.AddCharacteristic(lib.NewEchoChar())
+	ib.serviceList = append(ib.serviceList, testSvc)
 }
 
 func (ib *IBeacon) Advertise() error {
-	d, err := dev.NewDevice("default")
-	if err != nil {
-		log.Fatalf("can't new device : %s", err)
+	ble.SetDefaultDevice(ib.BeaconDev)
+
+	for _, service := range ib.serviceList {
+		if err := ble.AddService(service); err != nil {
+			log.Fatalf("can't add service: %s", err)
+		}
 	}
-	ble.SetDefaultDevice(d)
 
 	// Advertise for specified durantion, or until interrupted by user.
-	fmt.Printf("Advertising for %s...\n", 5*time.Second)
-	ctx := ble.WithSigHandler(context.WithTimeout(context.Background(), 5*time.Second))
+	fmt.Printf("Advertising for %s...\n", 30*time.Second)
+	ctx := ble.WithSigHandler(context.WithTimeout(context.Background(), 30*time.Second))
 	return ble.AdvertiseNameAndServices(ctx, "Gopher")
 
 	// // Register optional handlers.

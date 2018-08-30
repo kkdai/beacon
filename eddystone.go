@@ -1,12 +1,15 @@
 package beacon
 
 import (
+	"context"
+	"encoding/hex"
 	"fmt"
 	"log"
+	"time"
 
-	"github.com/bettercap/gatt"
-	"github.com/bettercap/gatt/examples/option"
-	"github.com/suapapa/go_eddystone"
+	"github.com/go-ble/ble"
+	"github.com/go-ble/ble/examples/lib/dev"
+	eddystone "github.com/suapapa/go_eddystone"
 )
 
 const (
@@ -94,35 +97,40 @@ func (eb *EddyStoneBeacon) addURL(url string) {
 
 // Start to Advertise your beacon, it is block API.
 func (eb *EddyStoneBeacon) Advertise() {
-	a := &gatt.AdvPacket{}
-	a.AppendFlags(advFlagGeneralDiscoverable | advFlagLEOnly)
-	a.AppendField(advTypeAllUUID16, eddystone.SvcUUIDBytes)
-	a.AppendField(advTypeServiceData16, append(eddystone.SvcUUIDBytes, *eb.OutFrame...))
+	// a := &gatt.AdvPacket{}
+	// a.AppendFlags(advFlagGeneralDiscoverable | advFlagLEOnly)
+	// a.AppendField(advTypeAllUUID16, eddystone.SvcUUIDBytes)
+	// a.AppendField(advTypeServiceData16, append(eddystone.SvcUUIDBytes, *eb.OutFrame...))
 
-	fmt.Println(a.Len(), a)
+	// fmt.Println(a.Len(), a)
 
-	d, err := gatt.NewDevice(option.DefaultServerOptions...)
+	fmt.Printf("Eddystone data: %s\n", hex.EncodeToString(*eb.OutFrame))
+	d, err := dev.NewDevice("default")
 	if err != nil {
 		log.Fatalf("Failed to open device, err: %s", err)
 	}
 
-	// Register optional handlers.
-	d.Handle(
-		gatt.CentralConnected(func(c gatt.Central) { fmt.Println("Connect: ", c.ID()) }),
-		gatt.CentralDisconnected(func(c gatt.Central) { fmt.Println("Disconnect: ", c.ID()) }),
-	)
+	ble.SetDefaultDevice(d)
+	ctx := ble.WithSigHandler(context.WithTimeout(context.Background(), 30*time.Second))
+	fmt.Printf("Eddystone advertising .... \n")
+	ble.AdvertiseIBeaconData(ctx, *eb.OutFrame)
+	// // Register optional handlers.
+	// d.Handle(
+	// 	gatt.CentralConnected(func(c gatt.Central) { fmt.Println("Connect: ", c.ID()) }),
+	// 	gatt.CentralDisconnected(func(c gatt.Central) { fmt.Println("Disconnect: ", c.ID()) }),
+	// )
 
-	// A mandatory handler for monitoring device state.
-	onStateChanged := func(d gatt.Device, s gatt.State) {
-		fmt.Printf("State: %s\n", s)
-		switch s {
-		case gatt.StatePoweredOn:
-			d.Advertise(a)
-		default:
-			log.Println(s)
-		}
-	}
+	// // A mandatory handler for monitoring device state.
+	// onStateChanged := func(d gatt.Device, s gatt.State) {
+	// 	fmt.Printf("State: %s\n", s)
+	// 	switch s {
+	// 	case gatt.StatePoweredOn:
+	// 		d.Advertise(a)
+	// 	default:
+	// 		log.Println(s)
+	// 	}
+	// }
 
-	d.Init(onStateChanged)
-	select {}
+	// d.Init(onStateChanged)
+	// select {}
 }
