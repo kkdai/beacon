@@ -9,16 +9,12 @@ This package is summarized golang beacon simulator with paypal/gatt package. It 
 - iBeacon: Apple [iBeacon](https://developer.apple.com/ibeacon/)
 - Eddystone: Google [Eddystone](https://github.com/google/eddystone)
 
-
-
-
- 
-Install
+Install library
 ---------------
 `go get github.com/kkdai/beacon`
 
 
-Binary
+Install binary
 ---------------
 
 - Eddystone: `go install github.com/kkdai/beacon/eddystone`
