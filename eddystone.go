@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/paypal/gatt"
-	"github.com/paypal/gatt/examples/option"
+	"github.com/bettercap/gatt"
+	"github.com/bettercap/gatt/examples/option"
 	"github.com/suapapa/go_eddystone"
 )
 

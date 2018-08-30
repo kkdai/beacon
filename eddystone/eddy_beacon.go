@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	ed := NewEddystoneURLBeacon("http://www.evanlin.com", -20)
+	ed := NewEddystoneUIDBeacon("00010203040506070809", "aabbccddeeff", -20)
 	ed.Advertise()
 }

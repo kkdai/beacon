@@ -1,17 +1,18 @@
 package beacon
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"time"
 
-	"github.com/paypal/gatt"
-	"github.com/paypal/gatt/examples/option"
-	"github.com/paypal/gatt/examples/service"
+	"github.com/go-ble/ble"
+	"github.com/go-ble/ble/examples/lib/dev"
 )
 
 type IBeacon struct {
-	serviceList []*gatt.Service
-	beaconDev   *gatt.Device
+	// serviceList []*ble.Service
+	// beaconDev   *ble.Device
 
 	//Device Information
 	DevUUID         string
@@ -22,13 +23,13 @@ type IBeacon struct {
 }
 
 func NewIBeacon(devUUID string, name string, powerLevel int8) *IBeacon {
-	ib := new(IBeacon)
-	ib.DevUUID = devUUID
-	ib.DevName = name
-	ib.DevMajorVersion = 1 //default
-	ib.DevMinorVersion = 1 //default
-	ib.PowerLevel = powerLevel
-	return ib
+	// ib := new(IBeacon)
+	// ib.DevUUID = devUUID
+	// ib.DevName = name
+	// ib.DevMajorVersion = 1 //default
+	// ib.DevMinorVersion = 1 //default
+	// ib.PowerLevel = powerLevel
+	return &IBeacon{}
 }
 
 func (ib *IBeacon) SetiBeaconVersion(major, minor uint16) {
@@ -37,56 +38,62 @@ func (ib *IBeacon) SetiBeaconVersion(major, minor uint16) {
 }
 
 func (ib *IBeacon) AddBatteryService() {
-	sev := service.NewBatteryService()
-	ib.serviceList = append(ib.serviceList, sev)
+	// sev := ble.NewService(ble.BatteryUUID)
+	// ib.serviceList = append(ib.serviceList, sev)
 }
 
 func (ib *IBeacon) AddCountService() {
-	sev := service.NewCountService()
-	ib.serviceList = append(ib.serviceList, sev)
+	// testSvc := ble.NewService(lib.TestSvcUUID)
+	// testSvc.AddCharacteristic(lib.NewCountChar())
+	// testSvc.AddCharacteristic(lib.NewEchoChar())
+	// ib.serviceList = append(ib.serviceList, testSvc)
 }
 
 func (ib *IBeacon) Advertise() error {
-
-	d, err := gatt.NewDevice(option.DefaultServerOptions...)
+	d, err := dev.NewDevice("default")
 	if err != nil {
-		log.Fatalf("Failed to open device, err: %s", err)
-		return err
+		log.Fatalf("can't new device : %s", err)
 	}
+	ble.SetDefaultDevice(d)
 
-	// Register optional handlers.
-	d.Handle(
-		gatt.CentralConnected(func(c gatt.Central) { fmt.Println("Connect: ", c.ID()) }),
-		gatt.CentralDisconnected(func(c gatt.Central) { fmt.Println("Disconnect: ", c.ID()) }),
-	)
+	// Advertise for specified durantion, or until interrupted by user.
+	fmt.Printf("Advertising for %s...\n", 5*time.Second)
+	ctx := ble.WithSigHandler(context.WithTimeout(context.Background(), 5*time.Second))
+	return ble.AdvertiseNameAndServices(ctx, "Gopher")
 
-	// A mandatory handler for monitoring device state.
-	onStateChanged := func(d gatt.Device, s gatt.State) {
-		fmt.Printf("State: %s\n", s)
-		switch s {
-		case gatt.StatePoweredOn:
-			// Setup GAP and GATT services for Linux implementation.
-			// OS X doesn't export the access of these services.
-			d.AddService(service.NewGapService(ib.DevName)) // no effect on OS X
-			d.AddService(service.NewGattService())          // no effect on OS X
+	// // Register optional handlers.
+	// d.Handle(
+	// 	gatt.CentralConnected(func(c gatt.Central) { fmt.Println("Connect: ", c.ID()) }),
+	// 	gatt.CentralDisconnected(func(c gatt.Central) { fmt.Println("Disconnect: ", c.ID()) }),
+	// )
 
-			//Append services
-			serviceUUIDs := []gatt.UUID{}
-			for _, v := range ib.serviceList {
-				d.AddService(v)
-				serviceUUIDs = append(serviceUUIDs, v.UUID())
-			}
+	// // A mandatory handler for monitoring device state.
+	// onStateChanged := func(d gatt.Device, s gatt.State) {
+	// 	fmt.Printf("State: %s\n", s)
+	// 	switch s {
+	// 	case gatt.StatePoweredOn:
+	// 		// Setup GAP and GATT services for Linux implementation.
+	// 		// OS X doesn't export the access of these services.
+	// 		d.AddService(service.NewGapService(ib.DevName)) // no effect on OS X
+	// 		d.AddService(service.NewGattService())          // no effect on OS X
 
-			// Advertise device name and service's UUIDs.
-			d.AdvertiseNameAndServices(ib.DevName, serviceUUIDs)
+	// 		//Append services
+	// 		serviceUUIDs := []gatt.UUID{}
+	// 		for _, v := range ib.serviceList {
+	// 			d.AddService(v)
+	// 			serviceUUIDs = append(serviceUUIDs, v.UUID())
+	// 		}
 
-			// Advertise as an OpenBeacon iBeacon
-			d.AdvertiseIBeacon(gatt.MustParseUUID(ib.DevUUID), ib.DevMajorVersion, ib.DevMinorVersion, ib.PowerLevel)
+	// 		// Advertise device name and service's UUIDs.
+	// 		d.AdvertiseNameAndServices(ib.DevName, serviceUUIDs)
 
-		default:
-		}
-	}
+	// 		// Advertise as an OpenBeacon iBeacon
+	// 		d.AdvertiseIBeacon(gatt.MustParseUUID(ib.DevUUID), ib.DevMajorVersion, ib.DevMinorVersion, ib.PowerLevel)
 
-	d.Init(onStateChanged)
-	select {}
+	// 	default:
+	// 	}
+	// }
+
+	// d.Init(onStateChanged)
+	// select {}
 }
